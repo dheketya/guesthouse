@@ -16,10 +16,12 @@ export default function Reservations() {
   const [editRes, setEditRes] = useState(null);
   const [confirmCancel, setConfirmCancel] = useState(null);
   const [form, setForm] = useState({
-    guest_id: '', guest_name: '', room_id: '', check_in_date: '', check_out_date: '',
+    guest_id: '', guest_name: '', guest_phone: '', room_id: '', check_in_date: '', check_out_date: '',
     num_guests: 1, cooling_type: 'aircon', price_type: 'regular', custom_price: '',
     booking_source: 'direct', status: 'confirmed', special_requests: '', notes: ''
   });
+  const [phoneSearchResults, setPhoneSearchResults] = useState([]);
+  const [phoneSearchDone, setPhoneSearchDone] = useState(false);
 
   const load = () => {
     const params = {};
@@ -47,7 +49,9 @@ export default function Reservations() {
 
   const openNew = () => {
     setEditRes(null);
-    setForm({ guest_id: '', guest_name: '', room_id: '', check_in_date: '', check_out_date: '', num_guests: 1, cooling_type: 'aircon', price_type: 'regular', custom_price: '', booking_source: 'direct', status: 'confirmed', special_requests: '', notes: '' });
+    setForm({ guest_id: '', guest_name: '', guest_phone: '', room_id: '', check_in_date: '', check_out_date: '', num_guests: 1, cooling_type: 'aircon', price_type: 'regular', custom_price: '', booking_source: 'direct', status: 'confirmed', special_requests: '', notes: '' });
+    setPhoneSearchResults([]);
+    setPhoneSearchDone(false);
     setRooms([]);
     setShowModal(true);
   };
@@ -56,7 +60,8 @@ export default function Reservations() {
     setEditRes(r);
     setForm({
       guest_id: r.guest_id,
-      guest_name: `${r.first_name} ${r.last_name}`,
+      guest_name: `${r.first_name} ${r.last_name}`.trim(),
+      guest_phone: r.guest_phone || '',
       room_id: String(r.room_id),
       check_in_date: r.check_in_date?.split('T')[0] || '',
       check_out_date: r.check_out_date?.split('T')[0] || '',
@@ -93,7 +98,7 @@ export default function Reservations() {
     // Validate discount price
     if (form.price_type === 'discount' && form.custom_price) {
       const selectedRoom = rooms.find(r => r.id === parseInt(form.room_id));
-      if (selectedRoom && parseFloat(form.custom_price) >= Number(selectedRoom.price)) {
+      if (selectedRoom && parseFloat(form.custom_price) >= getRoomPrice(selectedRoom)) {
         toast.error('តម្លៃបញ្ចុះត្រូវតែតិចជាងតម្លៃពិត');
         return;
       }
@@ -136,19 +141,23 @@ export default function Reservations() {
     }
   };
 
-  // Helper to get price display for a selected room
+  // Get room price based on cooling selection
+  const getRoomPrice = (room) => {
+    if (!room) return 0;
+    return form.cooling_type === 'aircon' ? Number(room.aircon_price || 0) : Number(room.fan_price || 0);
+  };
+
   const getPriceDisplay = () => {
     if (!form.room_id) return null;
     const selectedRoom = rooms.find(r => r.id === parseInt(form.room_id));
     if (!selectedRoom) return null;
-    const displayPrice = (form.price_type === 'discount' && form.custom_price)
-      ? form.custom_price
-      : (form.price_type === 'regular' ? (selectedRoom.price || 0) : (form.custom_price || '—'));
+    const basePrice = getRoomPrice(selectedRoom);
+    const displayPrice = (form.price_type === 'discount' && form.custom_price) ? Number(form.custom_price) : basePrice;
     return (
       <div style={{ background: '#e8f5e9', padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: 14 }}>
-        តម្លៃក្នុង១យប់: <strong>{typeof displayPrice === 'number' ? formatPrice(displayPrice, rate) : (displayPrice !== '—' ? formatPrice(displayPrice, rate) : '—')}</strong>
+        តម្លៃក្នុង១យប់: <strong>{formatPrice(displayPrice, rate)}</strong>
         <span style={{ color: '#666', marginLeft: 8 }}>
-          ({form.price_type === 'discount' ? 'បញ្ចុះតម្លៃ' : 'តម្លៃពិត'})
+          ({form.cooling_type === 'aircon' ? '❄ Aircon' : '🌀 Fan'}{form.price_type === 'discount' ? ', បញ្ចុះតម្លៃ' : ''})
         </span>
       </div>
     );
@@ -191,7 +200,8 @@ export default function Reservations() {
                   <td>{r.cooling_type === 'aircon' ? '❄ Aircon' : '🌀 Fan'}</td>
                   <td>
                     {(() => {
-                      const price = r.price_type === 'discount' && r.custom_price ? r.custom_price : r.room_price;
+                      const basePrice = r.cooling_type === 'aircon' ? r.aircon_price : r.fan_price;
+                      const price = r.price_type === 'discount' && r.custom_price ? r.custom_price : basePrice;
                       return (
                         <>
                           {formatPriceShort(price, rate)}
@@ -239,7 +249,7 @@ export default function Reservations() {
 
       {/* Create / Edit Reservation Modal */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (() => setShowModal(false))(); }}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3>{editRes ? `Edit Reservation — ${editRes.booking_ref}` : 'New Reservation'}</h3>
             <form onSubmit={save}>
@@ -271,7 +281,7 @@ export default function Reservations() {
                 <label>Room {rooms.length > 0 && `(${rooms.length} available)`}</label>
                 <select value={form.room_id} onChange={e => setForm({...form, room_id: e.target.value})} required>
                   <option value="">{form.check_in_date ? (rooms.length ? 'Select room' : 'No rooms available') : 'Set check-in date first'}</option>
-                  {rooms.map(r => <option key={r.id} value={r.id}>{r.room_number} — {r.room_type_name} (${Number(r.price || 0).toFixed(0)}) [{r.building_name}]</option>)}
+                  {rooms.map(r => <option key={r.id} value={r.id}>{r.room_number} — {r.room_type_name} | Fan ${Number(r.fan_price||0).toFixed(0)} / AC ${Number(r.aircon_price||0).toFixed(0)} [{r.building_name}]</option>)}
                 </select>
               </div>
               <div className="form-row">
@@ -292,7 +302,7 @@ export default function Reservations() {
               </div>
               {form.price_type === 'discount' && (() => {
                 const selectedRoom = rooms.find(r => r.id === parseInt(form.room_id));
-                const roomPrice = selectedRoom ? Number(selectedRoom.price) : 0;
+                const roomPrice = selectedRoom ? getRoomPrice(selectedRoom) : 0;
                 const discountVal = parseFloat(form.custom_price) || 0;
                 const tooHigh = discountVal > 0 && roomPrice > 0 && discountVal >= roomPrice;
                 return (

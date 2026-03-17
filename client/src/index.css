@@ -385,6 +385,7 @@ table tr:hover {
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
+  pointer-events: auto;
 }
 
 .modal h3 {

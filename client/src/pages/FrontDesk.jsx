@@ -182,7 +182,8 @@ export default function FrontDesk() {
     e.preventDefault();
     if (bookingForm.price_type === 'discount' && bookingForm.custom_price) {
       const selectedRoom = rooms.find(r => r.id === parseInt(bookingForm.room_id));
-      if (selectedRoom && parseFloat(bookingForm.custom_price) >= Number(selectedRoom.price)) {
+      const bPrice = selectedRoom ? (bookingForm.cooling_type === 'aircon' ? Number(selectedRoom.aircon_price) : Number(selectedRoom.fan_price)) : 0;
+      if (selectedRoom && parseFloat(bookingForm.custom_price) >= bPrice) {
         toast.error('តម្លៃបញ្ចុះត្រូវតែតិចជាងតម្លៃពិត');
         return;
       }
@@ -362,14 +363,15 @@ export default function FrontDesk() {
       {/* Reservation detail */}
       {selectedRes && (() => {
         const rRate = settings.exchange_rate || 4100;
-        const actualPrice = selectedRes.price_type === 'discount' && selectedRes.custom_price ? selectedRes.custom_price : selectedRes.room_price;
+        const basePrice = selectedRes.cooling_type === 'aircon' ? selectedRes.aircon_price : selectedRes.fan_price;
+        const actualPrice = selectedRes.price_type === 'discount' && selectedRes.custom_price ? selectedRes.custom_price : basePrice;
         const nights = selectedRes.check_out_date
           ? Math.max(1, Math.ceil((new Date(selectedRes.check_out_date + 'T00:00:00') - new Date(selectedRes.check_in_date + 'T00:00:00')) / (1000*60*60*24)))
           : null;
         const totalEst = nights ? (Number(actualPrice) * nights) : null;
 
         return (
-          <div className="modal-overlay" onClick={() => setSelectedRes(null)}>
+          <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (() => setSelectedRes(null))(); }}>
             <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
               <h3>ព័ត៌មានការកក់ — {selectedRes.booking_ref}</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px', fontSize: 14, margin: '16px 0' }}>
@@ -387,8 +389,8 @@ export default function FrontDesk() {
               {/* Price summary */}
               <div style={{ background: '#f8f9fa', borderRadius: 8, padding: 14, marginBottom: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 4 }}>
-                  <span>តម្លៃបន្ទប់:</span>
-                  <strong>{formatPrice(selectedRes.room_price, rRate)}</strong>
+                  <span>🌀 Fan / ❄ AC:</span>
+                  <strong>{formatPrice(selectedRes.fan_price, rRate)} / {formatPrice(selectedRes.aircon_price, rRate)}</strong>
                 </div>
                 {selectedRes.price_type === 'discount' && selectedRes.custom_price && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 4, color: '#e65100' }}>
@@ -427,7 +429,7 @@ export default function FrontDesk() {
 
       {/* Quick booking modal */}
       {showBookingModal && (
-        <div className="modal-overlay" onClick={() => setShowBookingModal(false)}>
+        <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (() => setShowBookingModal(false))(); }}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3>កក់បន្ទប់ថ្មី</h3>
             <form onSubmit={saveBooking}>
@@ -456,7 +458,7 @@ export default function FrontDesk() {
                 <select value={bookingForm.room_id} onChange={e => setBookingForm({...bookingForm, room_id: e.target.value})} required>
                   <option value="">ជ្រើសរើសបន្ទប់</option>
                   {rooms.filter(r => r.status !== 'maintenance').map(r => (
-                    <option key={r.id} value={r.id}>{r.room_number} — {r.room_type_name} (${Number(r.price || 0).toFixed(0)}) [{r.building_code}]</option>
+                    <option key={r.id} value={r.id}>{r.room_number} — {r.room_type_name} | Fan ${Number(r.fan_price||0).toFixed(0)} / AC ${Number(r.aircon_price||0).toFixed(0)} [{r.building_code}]</option>
                   ))}
                 </select>
               </div>
@@ -478,7 +480,7 @@ export default function FrontDesk() {
               </div>
               {bookingForm.price_type === 'discount' && (() => {
                 const selectedRoom = rooms.find(r => r.id === parseInt(bookingForm.room_id));
-                const roomPrice = selectedRoom ? Number(selectedRoom.price) : 0;
+                const roomPrice = selectedRoom ? (bookingForm.cooling_type === 'aircon' ? Number(selectedRoom.aircon_price) : Number(selectedRoom.fan_price)) : 0;
                 const discountVal = parseFloat(bookingForm.custom_price) || 0;
                 const tooHigh = discountVal > 0 && roomPrice > 0 && discountVal >= roomPrice;
                 return (

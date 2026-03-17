@@ -7,7 +7,7 @@
 
 ## គោលបំណង
 
-ប្រព័ន្ធនេះគ្រប់គ្រងប្រតិបត្តិការប្រចាំថ្ងៃសម្រាប់ផ្ទះសំណាក់ដែលមានអគារច្រើន រួមទាំងការកក់បន្ទប់ ការចូល/ចេញភ្ញៀវ វិក្កយបត្រ ភោជនីយដ្ឋាន និងការគ្រប់គ្រងបុគ្គលិក។ បុគ្គលិកទាំងអស់ប្រើប្រាស់តាមកម្មវិធីរុករក (browser) នៅលើឧបករណ៍ណាមួយដែលភ្ជាប់ Wi-Fi។
+ប្រព័ន្ធនេះគ្រប់គ្រងប្រតិបត្តិការប្រចាំថ្ងៃសម្រាប់ផ្ទះសំណាក់ រួមទាំងការកក់បន្ទប់ ការចូល/ចេញភ្ញៀវ វិក្កយបត្រ ភោជនីយដ្ឋាន និងការគ្រប់គ្រងបុគ្គលិក។ បុគ្គលិកទាំងអស់ប្រើប្រាស់តាម browser នៅលើឧបករណ៍ណាមួយដែលភ្ជាប់ Wi-Fi។
 
 ---
 
@@ -15,11 +15,11 @@
 
 | Layer | Technology | Purpose |
 |---|---|---|
-| Frontend | React + Vite | UI — ដំណើរការលើ PC, tablet, ទូរសព្ទ |
-| Backend | Node.js + Express | REST API, business logic, JWT authentication |
+| Frontend | React + Vite | UI — PC, tablet, ទូរសព្ទ |
+| Backend | Node.js + Express | REST API, JWT authentication |
 | Database | MySQL 8.0+ | Relational data storage |
-| Fonts | Khmer OS Siemreap + Segoe UI | ភាសាខ្មែរ និង អង់គ្លេស |
-| Currency | USD + KHR (រៀល) | Dual currency with configurable exchange rate |
+| Fonts | Khmer OS Siemreap + Segoe UI | ខ្មែរ និង English |
+| Currency | USD ($) + KHR (៛) | Dual currency, configurable exchange rate |
 | Process Manager | PM2 | Auto-restart, 24/7 |
 
 ---
@@ -36,10 +36,10 @@
 
 ```bash
 # 1. Clone
-git clone <repo-url>
+git clone https://github.com/dheketya/guesthouse.git
 cd HappyStaySYS
 
-# 2. Install dependencies
+# 2. Install
 npm install
 cd client && npm install && cd ..
 
@@ -80,6 +80,13 @@ DEFAULT_CHECKOUT_TIME=12:00
 - Username: `admin`
 - Password: `admin123`
 
+### Default Room Types (Seed)
+
+- គ្រែមួយ (1 នាក់)
+- គ្រែ២ (2 នាក់)
+- គ្រែ៣ (3 នាក់)
+- គ្រួសារ (5 នាក់)
+
 ### Production (PM2)
 
 ```bash
@@ -101,16 +108,16 @@ HappyStaySYS/
 │   ├── public/fonts/           # Khmer OS Siemreap font
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── ConfirmModal.jsx    # Reusable confirmation dialog
-│   │   │   └── GuestSearch.jsx     # Guest search autocomplete
+│   │   │   ├── ConfirmModal.jsx    # In-app confirmation dialog
+│   │   │   └── GuestSearch.jsx     # Guest autocomplete search
 │   │   ├── context/
 │   │   │   └── AuthContext.jsx     # JWT auth state
 │   │   ├── pages/
 │   │   │   ├── Dashboard.jsx       # ផ្ទាំងគ្រប់គ្រង
-│   │   │   ├── FrontDesk.jsx       # ផ្នែកខាងមុខ (calendar)
+│   │   │   ├── FrontDesk.jsx       # កក់បន្ទប់ (calendar view)
+│   │   │   ├── Reservations.jsx    # បញ្ជីការកក់ (list view)
 │   │   │   ├── Rooms.jsx           # អគារ និង បន្ទប់
-│   │   │   ├── Reservations.jsx    # កក់បន្ទប់
-│   │   │   ├── Guests.jsx          # ព័ត៌មានភ្ញៀវ
+│   │   │   ├── Guests.jsx          # ព័ត៌មានភ្ញៀវ + stay history
 │   │   │   ├── CheckIn.jsx         # ចូល / ចេញ + payment
 │   │   │   ├── Billing.jsx         # វិក្កយបត្រ
 │   │   │   ├── Restaurant.jsx      # ភោជនីយដ្ឋាន
@@ -118,7 +125,8 @@ HappyStaySYS/
 │   │   │   ├── Settings.jsx        # ការកំណត់
 │   │   │   └── Login.jsx           # ចូលប្រើ
 │   │   ├── utils/
-│   │   │   └── currency.js         # USD/KHR formatting
+│   │   │   ├── currency.js         # USD/KHR formatting
+│   │   │   └── print.js            # Print utility
 │   │   ├── api.js                  # Axios instance
 │   │   ├── App.jsx                 # Routes + Layout
 │   │   └── index.css               # Global styles
@@ -129,9 +137,9 @@ HappyStaySYS/
 │   │   ├── auth.js             # Login, JWT
 │   │   ├── buildings.js        # Buildings + floors CRUD
 │   │   ├── rooms.js            # Rooms + types CRUD
-│   │   ├── reservations.js     # Booking CRUD
-│   │   ├── guests.js           # Guest profiles CRUD
-│   │   ├── checkin.js          # Check-in/out, extend, cooling switch
+│   │   ├── reservations.js     # Booking CRUD + auto guest creation
+│   │   ├── guests.js           # Guest profiles + stay history
+│   │   ├── checkin.js          # Check-in/out, extend, cooling switch, room change
 │   │   ├── billing.js          # Invoices, items, payments, discounts
 │   │   ├── restaurant.js       # Menu + orders
 │   │   ├── staff.js            # Staff accounts + activity log
@@ -141,13 +149,14 @@ HappyStaySYS/
 │   │   ├── auth.js             # JWT verification
 │   │   └── roles.js            # Role-based access
 │   ├── db/
-│   │   ├── connection.js       # MySQL pool
+│   │   ├── connection.js       # MySQL pool (dateStrings: true)
 │   │   ├── migrate.js          # Create all tables
-│   │   └── seed.js             # Initial data
+│   │   └── seed.js             # Initial data (Khmer room types)
 │   └── index.js                # Express server
 │
 ├── .env.example
 ├── .gitignore
+├── FEATURES.md
 ├── package.json
 └── readme.md
 ```
@@ -159,9 +168,9 @@ HappyStaySYS/
 | Table | Description |
 |---|---|
 | `buildings` | អគារ (name, code) |
-| `floors` | ជាន់ per building |
-| `rooms` | បន្ទប់ with fan/aircon prices, discount prices |
-| `room_types` | Single, Double, Twin, Suite, Family |
+| `floors` | ជាន់ per building (Ground Floor, 1, 2...) |
+| `rooms` | បន្ទប់ with single price per room |
+| `room_types` | គ្រែមួយ, គ្រែ២, គ្រែ៣, គ្រួសារ (user-customizable) |
 | `guests` | ព័ត៌មានភ្ញៀវ (name, ID, phone, nationality) |
 | `reservations` | ការកក់ with cooling_type, price_type, custom_price |
 | `reservation_guests` | Group booking (multiple guests per room) |
@@ -184,6 +193,9 @@ HappyStaySYS/
 - Passwords hashed with bcrypt (10 rounds)
 - Role-based access control per endpoint
 - In-app confirmation modals for all destructive actions
+- Check-in date validation (no early check-in)
+- Checkout date validation (must be after check-in)
+- Discount price validation (must be less than actual price)
 - Activity log for all sensitive operations
 
 ---

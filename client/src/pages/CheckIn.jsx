@@ -54,7 +54,22 @@ export default function CheckIn() {
   const doCheckIn = async () => {
     try {
       const res = await api.post('/checkin', { reservation_id: confirmCheckIn.id });
-      toast.success(`ចូលស្នាក់នៅបានជោគជ័យ! វិក្កយបត្រ: ${res.data.invoice_number}`);
+      toast.success(`ចូលស្នាក់នៅបានជោគជ័យ!`);
+      // Print check-in slip
+      const ci = confirmCheckIn;
+      printContent('Check-in', `
+        <div class="header"><h1>${ghName}</h1><p>បង្កាន់ដៃចូលស្នាក់នៅ</p></div>
+        <div class="info-grid">
+          <div>ភ្ញៀវ: <strong>${ci.first_name} ${ci.last_name}</strong></div>
+          <div>បន្ទប់: <strong>${ci.room_number} (${ci.building_name})</strong></div>
+          <div>Cooling: <strong>${ci.cooling_type === 'aircon' ? 'Aircon' : 'Fan'}</strong></div>
+          <div>វិក្កយបត្រ: <strong>${res.data.invoice_number}</strong></div>
+          <div>ថ្ងៃចូល: <strong>${ci.check_in_date}</strong></div>
+          <div>ថ្ងៃចេញ: <strong>${ci.check_out_date || 'មិនកំណត់'}</strong></div>
+        </div>
+        <div class="sig-area"><div class="sig-line"><div>ហត្ថលេខាភ្ញៀវ</div></div><div class="sig-line"><div>អ្នកទទួលភ្ញៀវ</div></div></div>
+        <div class="footer">${settings.invoice_footer || 'អរគុណសម្រាប់ការស្នាក់នៅជាមួយយើង!'}</div>
+      `);
       setConfirmCheckIn(null);
       load();
     } catch (err) {
@@ -135,6 +150,41 @@ export default function CheckIn() {
       // Do checkout
       await api.post('/checkin/checkout', { reservation_id: checkoutStay.id });
       toast.success('ចេញបានជោគជ័យ!');
+
+      // Print checkout receipt
+      const payAmtNum = parseFloat(paymentAmount) || 0;
+      const displayPayAmt = paymentCurrency === 'khr'
+        ? `${Number(paymentAmount).toLocaleString()}៛ ($${(payAmtNum / rate).toFixed(2)})`
+        : `$${payAmtNum.toFixed(2)} (${Math.round(payAmtNum * rate).toLocaleString()}៛)`;
+      const mLabels = { cash: 'សាច់ប្រាក់', card: 'កាត', bank_transfer: 'ផ្ទេរប្រាក់', qr_code: 'QR Code' };
+      const invTotal = checkoutInvoice ? fp(checkoutInvoice.total) : '-';
+      printContent('Check-out', `
+        <div class="header"><h1>${ghName}</h1><p>បង្កាន់ដៃចេញ</p></div>
+        <div class="info-grid">
+          <div>ភ្ញៀវ: <strong>${checkoutStay.first_name} ${checkoutStay.last_name}</strong></div>
+          <div>បន្ទប់: <strong>${checkoutStay.room_number} (${checkoutStay.building_name})</strong></div>
+          <div>ថ្ងៃចូល: <strong>${checkoutStay.check_in_date}</strong></div>
+          <div>ថ្ងៃចេញ: <strong>${checkoutDate}</strong></div>
+        </div>
+        ${checkoutInvoice ? `
+          <table><thead><tr><th>បរិយាយ</th><th style="text-align:right">សរុប</th></tr></thead><tbody>
+          ${checkoutInvoice.items?.map(i => `<tr><td>${i.description}</td><td style="text-align:right">${fp(i.total_price)}</td></tr>`).join('')}
+          </tbody></table>
+          <div class="total-section">
+            <p>សរុប: <strong>${invTotal}</strong></p>
+            ${checkoutInvoice.paid_amount > 0 ? `<p>បានបង់រួច: ${fp(checkoutInvoice.paid_amount)}</p>` : ''}
+          </div>
+        ` : ''}
+        ${payAmtNum > 0 ? `
+          <div style="margin-top:12px;padding:10px;background:#f5f5f5;border-radius:6px">
+            <p>ការទូទាត់: <strong>${displayPayAmt}</strong></p>
+            <p>វិធី: <strong>${mLabels[paymentMethod]}</strong></p>
+          </div>
+        ` : ''}
+        <div class="sig-area"><div class="sig-line"><div>ហត្ថលេខាភ្ញៀវ</div></div><div class="sig-line"><div>អ្នកទទួលភ្ញៀវ</div></div></div>
+        <div class="footer">${settings.invoice_footer || 'អរគុណសម្រាប់ការស្នាក់នៅជាមួយយើង!'}</div>
+      `);
+
       setCheckoutStep(null);
       setCheckoutStay(null);
       load();
@@ -244,7 +294,8 @@ export default function CheckIn() {
                   const todayStr = new Date().toISOString().split('T')[0];
                   const ciDate = a.check_in_date?.split('T')[0] || a.check_in_date;
                   const isFuture = ciDate > todayStr;
-                  const actualPrice = a.price_type === 'discount' && a.custom_price ? a.custom_price : a.room_price;
+                  const basePrice = a.cooling_type === 'aircon' ? a.aircon_price : a.fan_price;
+                  const actualPrice = a.price_type === 'discount' && a.custom_price ? a.custom_price : basePrice;
                   return (
                     <tr key={a.id}>
                       <td><strong>{a.booking_ref}</strong></td>
@@ -310,7 +361,8 @@ export default function CheckIn() {
               <thead><tr><th>Ref</th><th>ភ្ញៀវ</th><th>បន្ទប់</th><th>Cooling</th><th>តម្លៃ/យប់</th><th>ចូល</th><th>ចេញ</th><th></th></tr></thead>
               <tbody>
                 {activeStays.map(s => {
-                  const stayPrice = s.price_type === 'discount' && s.custom_price ? s.custom_price : s.room_price;
+                  const stayBasePrice = s.cooling_type === 'aircon' ? s.aircon_price : s.fan_price;
+                  const stayPrice = s.price_type === 'discount' && s.custom_price ? s.custom_price : stayBasePrice;
                   return (
                   <tr key={s.id}>
                     <td><strong>{s.booking_ref}</strong></td>
@@ -368,7 +420,7 @@ export default function CheckIn() {
         const isValid = checkoutDate >= minCheckout;
         const nights = isValid ? Math.ceil((new Date(checkoutDate + 'T00:00:00') - new Date(ciDate + 'T00:00:00')) / (1000*60*60*24)) : 0;
         return (
-          <div className="modal-overlay" onClick={cancelCheckout}>
+          <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (cancelCheckout)(); }}>
             <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 460 }}>
               <h3>ជំហានទី ១ — ជ្រើសរើសថ្ងៃចេញ</h3>
               <div style={{ fontSize: 14, marginBottom: 16 }}>
@@ -406,7 +458,7 @@ export default function CheckIn() {
         const payInUSD = paymentCurrency === 'khr' ? (payAmountNum / rate) : payAmountNum;
 
         return (
-          <div className="modal-overlay" onClick={cancelCheckout}>
+          <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (cancelCheckout)(); }}>
             <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 520 }}>
               <h3>ជំហានទី ២ — ទូទាត់ប្រាក់</h3>
 
@@ -519,7 +571,7 @@ export default function CheckIn() {
         const methodLabels = { cash: 'សាច់ប្រាក់', card: 'កាត', bank_transfer: 'ផ្ទេរប្រាក់', qr_code: 'QR Code' };
 
         return (
-          <div className="modal-overlay" onClick={cancelCheckout}>
+          <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (cancelCheckout)(); }}>
             <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
               <h3>ជំហានទី ៣ — បញ្ជាក់ចុងក្រោយ</h3>
               <div style={{ background: '#fff3e0', borderRadius: 8, padding: 16, marginBottom: 16, fontSize: 14 }}>
@@ -550,7 +602,7 @@ export default function CheckIn() {
 
       {/* Extend Stay */}
       {showExtend && (
-        <div className="modal-overlay" onClick={() => setShowExtend(null)}>
+        <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (() => setShowExtend(null))(); }}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400 }}>
             <h3>បន្ថែមការស្នាក់នៅ</h3>
             <div className="form-group">
@@ -567,7 +619,7 @@ export default function CheckIn() {
 
       {/* Switch Cooling */}
       {switchingCooling && (
-        <div className="modal-overlay" onClick={() => setSwitchingCooling(null)}>
+        <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (() => setSwitchingCooling(null))(); }}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 420 }}>
             <h3>{switchingCooling.cooling_type === 'fan' ? 'ដំឡើងទៅ Aircon' : 'បន្ថយទៅ Fan'}</h3>
             <p style={{ marginBottom: 12 }}>
@@ -587,7 +639,7 @@ export default function CheckIn() {
 
       {/* Room Change */}
       {showRoomChange && (
-        <div className="modal-overlay" onClick={() => setShowRoomChange(null)}>
+        <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (() => setShowRoomChange(null))(); }}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
             <h3>ផ្លាស់ប្តូរបន្ទប់</h3>
             <div style={{ fontSize: 14, marginBottom: 16 }}>
@@ -601,7 +653,7 @@ export default function CheckIn() {
                 <option value="">— ជ្រើសរើសបន្ទប់ —</option>
                 {availableRooms.map(r => (
                   <option key={r.id} value={r.id}>
-                    {r.room_number} — {r.room_type_name} (${Number(r.price || 0).toFixed(0)}) [{r.building_name}]
+                    {r.room_number} — {r.room_type_name} | Fan ${Number(r.fan_price||0).toFixed(0)} / AC ${Number(r.aircon_price||0).toFixed(0)} [{r.building_name}]
                   </option>
                 ))}
               </select>
@@ -614,7 +666,7 @@ export default function CheckIn() {
               return (
                 <div style={{ background: '#f0f7ff', padding: '12px 14px', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
                   <p><strong>បន្ទប់ថ្មី:</strong> {newRoom.room_number} — {newRoom.room_type_name} ({newRoom.building_name})</p>
-                  <p style={{ marginTop: 4 }}>តម្លៃ: ${Number(newRoom.price || 0).toFixed(2)}/យប់</p>
+                  <p style={{ marginTop: 4 }}>Fan: ${Number(newRoom.fan_price||0).toFixed(2)} | AC: ${Number(newRoom.aircon_price||0).toFixed(2)}</p>
                   <p style={{ color: '#888', marginTop: 4, fontSize: 12 }}>តម្លៃខុសគ្នាសម្រាប់យប់នៅសល់នឹងត្រូវបានកែប្រែលើវិក្កយបត្រ។</p>
                 </div>
               );
@@ -629,7 +681,7 @@ export default function CheckIn() {
 
       {/* Checkout Letter */}
       {showLetter && letterData && (
-        <div className="modal-overlay" onClick={() => setShowLetter(false)}>
+        <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (() => setShowLetter(false))(); }}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 700 }}>
             <div className="flex justify-between items-center mb-2">
               <h3>លិខិតចេញ</h3>

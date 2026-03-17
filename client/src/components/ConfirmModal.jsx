@@ -10,7 +10,7 @@ export default function ConfirmModal({ open, title, message, children, confirmTe
   const confirmBtnClass = variantClassMap[variant] || 'btn-danger';
 
   return (
-    <div className="modal-overlay" onClick={onCancel}>
+    <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (onCancel)(); }}>
       <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
         {title && <h3 style={{ marginBottom: 12 }}>{title}</h3>}
         {message && <p style={{ color: '#555', marginBottom: 16, lineHeight: 1.5 }}>{message}</p>}

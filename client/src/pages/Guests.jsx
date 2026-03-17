@@ -160,7 +160,8 @@ export default function Guests() {
               </thead>
               <tbody>
                 {filteredStays.map(s => {
-                  const price = s.price_type === 'discount' && s.custom_price ? s.custom_price : s.room_price;
+                  const baseP = s.cooling_type === 'aircon' ? s.aircon_price : s.fan_price;
+                  const price = s.price_type === 'discount' && s.custom_price ? s.custom_price : baseP;
                   const nights = s.check_out_date
                     ? Math.max(1, Math.ceil((new Date(s.check_out_date + 'T00:00:00') - new Date(s.check_in_date + 'T00:00:00')) / (1000*60*60*24)))
                     : '-';
@@ -205,15 +206,15 @@ export default function Guests() {
         <div className="table-container">
           <table>
             <thead>
-              <tr><th>ឈ្មោះ</th><th>សញ្ជាតិ</th><th>លេខ ID</th><th>ទូរសព្ទ</th><th>ស្នាក់នៅ</th><th></th></tr>
+              <tr><th>ទូរសព្ទ</th><th>ឈ្មោះ</th><th>សញ្ជាតិ</th><th>លេខ ID</th><th>ស្នាក់នៅ</th><th></th></tr>
             </thead>
             <tbody>
               {guests.map(g => (
                 <tr key={g.id} style={{ cursor: 'pointer' }} onClick={() => viewGuest(g.id)}>
-                  <td><strong>{g.first_name} {g.last_name}</strong></td>
+                  <td><strong>{g.phone || '-'}</strong></td>
+                  <td>{g.first_name || g.last_name ? `${g.first_name} ${g.last_name}`.trim() : '-'}</td>
                   <td>{g.nationality || '-'}</td>
                   <td>{g.id_number || '-'}</td>
-                  <td>{g.phone || '-'}</td>
                   <td style={{ color: '#4fc3f7', fontSize: 13 }}>មើលប្រវត្តិ →</td>
                   <td onClick={e => e.stopPropagation()}>
                     <button className="btn btn-sm btn-outline" onClick={() => openEdit(g)}>កែប្រែ</button>
@@ -229,13 +230,17 @@ export default function Guests() {
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (() => setShowModal(false))(); }}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3>{editGuest ? 'កែប្រែភ្ញៀវ' : 'បន្ថែមភ្ញៀវ'}</h3>
             <form onSubmit={save}>
+              <div className="form-group">
+                <label>ទូរសព្ទ <span style={{ color: '#c62828' }}>*</span></label>
+                <input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} required placeholder="ឧ. 012 345 678" style={{ fontSize: 16, padding: 12 }} />
+              </div>
               <div className="form-row">
-                <div className="form-group"><label>នាមត្រកូល</label><input value={form.first_name} onChange={e => setForm({...form, first_name: e.target.value})} required /></div>
-                <div className="form-group"><label>នាមខ្លួន</label><input value={form.last_name} onChange={e => setForm({...form, last_name: e.target.value})} required /></div>
+                <div className="form-group"><label>នាមត្រកូល</label><input value={form.first_name} onChange={e => setForm({...form, first_name: e.target.value})} /></div>
+                <div className="form-group"><label>នាមខ្លួន</label><input value={form.last_name} onChange={e => setForm({...form, last_name: e.target.value})} /></div>
               </div>
               <div className="form-row">
                 <div className="form-group">
@@ -260,10 +265,7 @@ export default function Guests() {
                 <div className="form-group"><label>ផុតកំណត់ ID</label><input type="date" value={form.id_expiry} onChange={e => setForm({...form, id_expiry: e.target.value})} /></div>
                 <div className="form-group"><label>ថ្ងៃកំណើត</label><input type="date" value={form.date_of_birth} onChange={e => setForm({...form, date_of_birth: e.target.value})} /></div>
               </div>
-              <div className="form-row">
-                <div className="form-group"><label>ទូរសព្ទ</label><input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></div>
-                <div className="form-group"><label>អ៊ីមែល</label><input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} /></div>
-              </div>
+              <div className="form-group"><label>អ៊ីមែល</label><input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} /></div>
               <div className="form-group"><label>កំណត់ចំណាំ</label><textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} rows={2} /></div>
               <div className="form-actions">
                 <button type="submit" className="btn btn-primary">{editGuest ? 'រក្សាទុក' : 'បង្កើត'}</button>

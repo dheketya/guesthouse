@@ -29,7 +29,7 @@ router.get('/:id', auth, authorize('admin', 'receptionist'), async (req, res) =>
     if (guests.length === 0) return res.status(404).json({ error: 'Guest not found.' });
 
     const [stays] = await db.query(`
-      SELECT r.*, rm.room_number, rm.price as room_price, rt.name as room_type_name, b.name as building_name
+      SELECT r.*, rm.room_number, rm.fan_price, rm.aircon_price, rt.name as room_type_name, b.name as building_name
       FROM reservations r
       JOIN rooms rm ON r.room_id = rm.id
       JOIN buildings b ON rm.building_id = b.id
@@ -48,12 +48,13 @@ router.get('/:id', auth, authorize('admin', 'receptionist'), async (req, res) =>
 router.post('/', auth, authorize('admin', 'receptionist'), async (req, res) => {
   try {
     const { first_name, last_name, gender, nationality, id_type, id_number, id_expiry, phone, email, date_of_birth, notes } = req.body;
+    if (!phone) return res.status(400).json({ error: 'ត្រូវការលេខទូរសព្ទ។' });
     const [result] = await db.query(
       `INSERT INTO guests (first_name, last_name, gender, nationality, id_type, id_number, id_expiry, phone, email, date_of_birth, notes)
        VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-      [first_name, last_name, gender, nationality, id_type, id_number, id_expiry, phone, email, date_of_birth, notes]
+      [first_name || '', last_name || '', gender, nationality, id_type, id_number, id_expiry, phone, email, date_of_birth, notes]
     );
-    res.status(201).json({ id: result.insertId, first_name, last_name });
+    res.status(201).json({ id: result.insertId, first_name, last_name, phone });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

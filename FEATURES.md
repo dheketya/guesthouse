@@ -1,157 +1,143 @@
-# HappyStay — System Features / មុខងារប្រព័ន្ធ
+# HappyStay — មុខងារប្រព័ន្ធ / System Features
 
 ---
 
-## 1. ផ្នែកខាងមុខ (Front Desk) — Calendar View
-
-Timeline calendar showing all rooms and reservations at a glance.
+## 1. កក់បន្ទប់ (Front Desk) — Calendar View
 
 - 14-day scrollable calendar grid
-- Rooms listed by type (Single, Double, Suite...)
+- Rooms grouped by type (គ្រែមួយ, គ្រែ២, គ្រែ៣, គ្រួសារ...)
 - Colored reservation bars spanning check-in to check-out
-  - Green = Confirmed | Orange = Pending | Blue = Checked In
-- Availability count badges per room type per day (green/orange/red)
-- Click empty cell to quick-book a room
-- Click reservation bar to view details, check-in, check-out, or cancel
+  - Green = បានបញ្ជាក់ | Orange = រង់ចាំ | Blue = កំពុងស្នាក់នៅ
+- Availability count badges per room type per day
+- Click empty cell → quick-book
+- Click reservation bar → view details with price summary (USD/KHR), check-in, check-out, cancel
+- Price popup shows: room price, discount price, per-night rate, estimated total
 - Navigate by week, jump to today
 - Filter by room type
-- Weekend highlighting, today column highlighted
+- **បញ្ជីការកក់** button → reservation list view
+- **+ កក់បន្ទប់ថ្មី** button → new booking with guest search
 
 ---
 
 ## 2. អគារ និង បន្ទប់ (Buildings & Rooms)
 
-Manage buildings, floors, and rooms with full pricing.
-
 ### Buildings
-- Create building with name, code, and description
-- Add floors during creation (Ground Floor, 1, 2, 3...)
+- Create with name, code, description
+- Add floors: Ground Floor, 1, 2, 3...
 - Edit building — rename, add/remove floors
-- Delete building (with confirmation)
+- Delete with in-app confirmation
 
 ### Rooms
-- Create room with: number, building, floor, type
-- **Dual pricing per room:**
-  - Fan Regular / Fan Discount
-  - Aircon Regular / Aircon Discount
+- Create room: number, building, floor, type, **single price**
 - Room status: Available, Occupied, Cleaning, Maintenance
 - Filter by building and/or status
-- Grid view (visual room cards) and Table view
-- Grid shows floor name, prices (USD/KHR), status badge
+- Grid view + Table view
+- Price shown in USD/KHR on all cards
 - Quick status change from table view
 
-### Room Types
-- Single, Double, Twin, Suite, Family
-- Base price per type
-- Customizable
+### Room Types (User-Customizable)
+- Default seed: គ្រែមួយ, គ្រែ២, គ្រែ៣, គ្រួសារ
+- Create/edit custom types via **ប្រភេទបន្ទប់** button
+- Name, max guests, description
 
 ---
 
 ## 3. កក់បន្ទប់ (Reservations)
 
-Full booking management with flexible pricing.
-
-- **Guest search**: Type name to search existing guests or create new
-- Check-in date required, check-out date optional
-- Room selector loads available rooms based on dates
-- **Cooling type**: Fan or Aircon
-- **Rate type**: Regular, Discount, or Custom Price
+- **Guest search**: autocomplete existing guests or create new
+- Check-in date required, check-out optional
+- Room selector with price shown
+- **Cooling type**: Fan or Aircon (default: Aircon)
+- **Price**: តម្លៃពិត (actual) or បញ្ចុះតម្លៃ (discount — enter amount)
+- Discount validation: must be less than room price
 - Live price-per-night display in USD/KHR
-- Booking source: Direct/Walk-in, Phone, Online
+- Booking source: Direct, Phone, Online
 - Auto-generate booking reference (HS-XXXXXXXX)
-- Edit any reservation (dates, room, cooling, rate, status)
-- Cancel reservation with in-app confirmation
-- Search by guest name or booking ref
-- Filter by status
+- Edit reservation (dates, room, cooling, rate, status)
+- Cancel with in-app confirmation
+- Search + filter by status
+- Back button to Front Desk calendar
+- **Print**: all receipts printable
 
 ---
 
 ## 4. ព័ត៌មានភ្ញៀវ (Guest Profiles)
 
-- Full name, gender, nationality
-- ID type (passport, national ID, driving license) + number + expiry
-- Phone, email, date of birth
+- Full name, gender, nationality, ID, phone, email, DOB
 - Auto-created when booking with just a name
 - Search by name, phone, or ID number
-- Reusable via GuestSearch component across all pages
-- Edit guest details anytime
+- GuestSearch autocomplete across Reservations, Front Desk, Restaurant
+- **Stay History** detail view:
+  - Stats: total stays, total nights, total records
+  - Filter: បានស្នាក់នៅ | រង់ចាំ | បានលុបចោល | មិនមក | ទាំងអស់
+  - Table: ref, room, type, cooling, price/night (USD/KHR), dates, nights, status
 
 ---
 
 ## 5. ចូល / ចេញ (Check-in / Check-out)
 
 ### Check-in
-- "Ready to Check-in" tab shows all confirmed/pending reservations
-- Check-in blocked if today is before reservation date (shows "មិនទាន់ដល់ថ្ងៃ")
-- In-app confirmation with guest/room/rate details
-- Auto-creates invoice with room charge
-- Room status auto-set to Occupied
+- "រង់ចាំចូល" tab — all confirmed/pending reservations with price
+- Blocked if today < reservation date (shows "មិនទាន់ដល់ថ្ងៃ")
+- In-app confirmation with details
+- Auto-creates invoice
+- **Auto-prints check-in slip**
 
 ### Check-out — 3-Step Process
-1. **ជំហានទី ១ — ថ្ងៃចេញ**: Pick checkout date (must be after check-in, min date enforced)
-2. **ជំហានទី ២ — ទូទាត់**: Full invoice summary, choose payment:
-   - Currency: USD ($) or KHR (៛)
-   - Method: Cash, Card, Bank Transfer, QR Code
-   - Amount auto-fills with balance, live currency conversion
-3. **ជំហានទី ៣ — បញ្ជាក់ចុងក្រោយ**: Final confirmation with all details
+1. **ជំហានទី ១**: Pick checkout date (validated: must be after check-in)
+2. **ជំហានទី ២**: Payment — invoice summary, choose USD or KHR, method (cash/card/transfer/QR), live conversion
+3. **ជំហានទី ៣**: Final confirmation
+- **Auto-prints checkout receipt**
 
 ### During Stay
-- **Extend stay**: Pick new checkout date, extra nights charged automatically
-- **Switch cooling**: Fan ↔ Aircon, price difference auto-adjusted on invoice
-- **Checkout letter**: Printable receipt with all charges, payments, signatures
+- **Extend stay**: extra nights auto-charged
+- **Switch cooling**: Fan ↔ Aircon, price difference auto-adjusted
+- **Change room**: upgrade/downgrade with price adjustment on invoice
+- **Checkout letter**: printable with charges, payments, signatures
 
 ---
 
 ## 6. វិក្កយបត្រ (Billing & Payments)
 
-- Auto-generated invoice on check-in
-- All amounts displayed in **USD + KHR** dual currency
-- Add extra charges: laundry, parking, minibar, room service, etc.
-- Apply discount (fixed amount or percentage)
-- Record payments — multiple partial payments supported
-- Invoice detail view with items, totals, payments history
+- Auto-generated on check-in
+- All amounts in **USD + KHR**
+- Add extra charges (laundry, parking, minibar, etc.)
+- Apply discount (fixed or percentage)
+- Multiple partial payments
+- **បោះពុម្ព វិក្កយបត្រ** — print invoice with full detail
 - Invoice status: Open, Partial, Paid
 
 ---
 
 ## 7. ភោជនីយដ្ឋាន (Restaurant)
 
-### Menu Management
+### Menu
 - Categories: Food, Drinks, Snacks
-- Add/edit/delete items with price
-- Toggle availability on/off
-- Prices shown in USD/KHR
+- Add/edit/delete items, toggle availability
+- Prices in USD/KHR
 
 ### Orders
-- **3 order types:**
-  - Room Bill — charges added to guest invoice
-  - Pay Now — guest pays immediately
-  - Outside Customer — walk-in customer tab
-- Guest search when entering customer name
-- Visual menu grid for quick item selection
-- Quantity editing, item removal
-- Order total in USD/KHR
+- 3 types: Room Bill, Pay Now, Outside Customer
+- Guest search for customer name
+- Visual menu grid for quick selection
 - Order status: Pending → Served → Paid
-- Payment by cash, card, or QR
+- **បោះពុម្ព** — print order receipt
 
 ---
 
 ## 8. បុគ្គលិក (Staff Management)
 
-- Create accounts: name, username, password, role, phone
+- Accounts: name, username, password, role, phone
 - Roles: Admin, Receptionist, Restaurant, Housekeeping
-- Enable/disable accounts without deleting
-- Admin can reset any password
-- Activity log: who did what and when
-
-### Role Permissions
+- Enable/disable accounts
+- Password reset
+- Activity log
 
 | Feature | Admin | Receptionist | Restaurant | Housekeeping |
 |---|---|---|---|---|
 | Dashboard | Full | Full | — | — |
-| Front Desk | Full | Full | — | — |
+| កក់បន្ទប់ | Full | Full | — | — |
 | Buildings & Rooms | Full | View | — | View |
-| Reservations | Full | Full | — | — |
 | Guests | Full | Full | — | — |
 | Check-in/out | Full | Full | — | — |
 | Billing | Full | Full | — | — |
@@ -163,51 +149,33 @@ Full booking management with flexible pricing.
 
 ## 9. ផ្ទាំងគ្រប់គ្រង (Dashboard)
 
-- Occupancy rate (percentage + room count)
-- Today's arrivals and departures
+- Occupancy rate (% + room count)
+- Today's arrivals / departures
 - Available rooms by type
 - Outstanding payments (USD/KHR)
-- Monthly revenue chart (bar chart)
-- Khmer month names
+- Monthly revenue chart (Khmer month names)
 
 ---
 
-## 10. ការកំណត់ (System Settings)
+## 10. ការកំណត់ (Settings)
 
 - Guesthouse name
-- Exchange rate (1 USD = ? KHR) — used system-wide
-- Tax rate
-- Default check-in / check-out times
-- Late checkout fee
-- Extra person charge
+- Exchange rate (1 USD = ? KHR)
+- Tax rate, late checkout fee, extra person charge
+- Check-in / check-out times
 - Invoice footer text
 
 ---
 
-## 11. UI / UX Features
+## 11. UI / UX
 
-### Language
-- Full Khmer UI (sidebar, labels, buttons, confirmations, messages)
-- Khmer OS Siemreap font (bundled, no install required)
-- Segoe UI fallback for English text
-
-### Currency
-- All prices in dual format: **$17.00 / 69,700៛**
-- Payment accepts USD or KHR with live conversion
-- Exchange rate configurable in settings
-
-### Confirmations
-- All destructive actions use in-app modal confirmations (no browser alerts)
-- Check-in, check-out, cancel, delete — all require explicit confirmation
-
-### Responsive
-- Works on PC, tablet, and phone
-- Collapsible sidebar on mobile
-- Full-width page content
-
-### Components
-- **GuestSearch**: Autocomplete search for existing guests, used in Reservations, Front Desk, Restaurant
-- **ConfirmModal**: Reusable confirmation dialog with customizable title, message, variant (danger/success/primary)
+- **Language**: Full Khmer UI, Khmer OS Siemreap font (bundled)
+- **Currency**: Dual USD/KHR everywhere, configurable exchange rate
+- **Confirmations**: In-app modals for all destructive actions
+- **Validation**: Discount < room price, checkout > check-in, no early check-in
+- **Printing**: Check-in slip, checkout receipt, invoice, order receipt
+- **Responsive**: PC, tablet, phone
+- **Components**: GuestSearch (autocomplete), ConfirmModal (reusable)
 
 ---
 
@@ -220,23 +188,13 @@ Full booking management with flexible pricing.
               |
     ┌─────────────────────┐
     │   Server PC          │
-    │  ┌────────────────┐  │
-    │  │ React (Vite)   │  │  port 5173 (dev) or built into Express
-    │  └───────┬────────┘  │
-    │          │           │
-    │  ┌───────▼────────┐  │
-    │  │ Express API    │  │  port 3000
-    │  └───────┬────────┘  │
-    │          │           │
-    │  ┌───────▼────────┐  │
-    │  │ MySQL 8.0      │  │  port 3306
-    │  └────────────────┘  │
+    │  React (Vite) :5173  │
+    │  Express API  :3000  │
+    │  MySQL 8.0    :3306  │
     └─────────────────────┘
 ```
 
-### Cloud Upgrade Path
-Same code, same database. Export → Import → PM2 + Nginx + SSL.
-Cost: ~$6-12/month VPS + ~$10-15/year domain.
+Cloud upgrade: same code → VPS + Nginx + SSL (~$6-12/month)
 
 ---
 

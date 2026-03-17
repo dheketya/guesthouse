@@ -21,7 +21,7 @@ export default function Rooms() {
   const [editBuilding, setEditBuilding] = useState(null);
   const [editRoom, setEditRoom] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
-  const [form, setForm] = useState({ room_number: '', building_id: '', floor_id: '', room_type_id: '', price: '', notes: '' });
+  const [form, setForm] = useState({ room_number: '', building_id: '', floor_id: '', room_type_id: '', fan_price: '', aircon_price: '', notes: '' });
   const [buildingForm, setBuildingForm] = useState({ name: '', code: '', description: '', floors: ['1'], existingFloors: [] });
   const [showTypeModal, setShowTypeModal] = useState(false);
   const [editType, setEditType] = useState(null);
@@ -68,7 +68,7 @@ export default function Rooms() {
     setEditRoom(room);
     setForm({
       room_number: room.room_number, building_id: room.building_id, floor_id: room.floor_id || '',
-      room_type_id: room.room_type_id, price: room.price || '', notes: room.notes || ''
+      room_type_id: room.room_type_id, fan_price: room.fan_price || '', aircon_price: room.aircon_price || '', notes: room.notes || ''
     });
     // Make sure floors for this building are loaded
     if (room.building_id && !floors[room.building_id]) {
@@ -323,8 +323,9 @@ export default function Rooms() {
                     <div className="room-number">{room.room_number}</div>
                     <div className="room-type">{room.room_type_name}</div>
                     {room.floor_name && <div style={{ fontSize: 10, color: '#888' }}>Floor: {room.floor_name}</div>}
-                    <div style={{ fontSize: 11, color: '#555', marginTop: 2 }}>
-                      {formatPriceShort(room.price, rate)}
+                    <div style={{ fontSize: 10, color: '#555', marginTop: 2, lineHeight: 1.4 }}>
+                      <div>🌀 {formatPriceShort(room.fan_price, rate)}</div>
+                      <div>❄ {formatPriceShort(room.aircon_price, rate)}</div>
                     </div>
                     <span className={`badge badge-${room.status}`} style={{ marginTop: 4 }}>{room.status}</span>
                   </div>
@@ -342,7 +343,7 @@ export default function Rooms() {
             <table>
               <thead>
                 <tr>
-                  <th>Room</th><th>Building</th><th>Floor</th><th>Type</th><th>Price</th><th>Status</th>
+                  <th>Room</th><th>Building</th><th>Floor</th><th>Type</th><th>🌀 Fan</th><th>❄ AC</th><th>Status</th>
                   {isAdmin && <th>Actions</th>}
                 </tr>
               </thead>
@@ -353,7 +354,8 @@ export default function Rooms() {
                     <td>{r.building_name}</td>
                     <td>{r.floor_name || r.floor_number || '-'}</td>
                     <td>{r.room_type_name}</td>
-                    <td>{formatPriceShort(r.price, rate)}</td>
+                    <td>{formatPriceShort(r.fan_price, rate)}</td>
+                    <td>{formatPriceShort(r.aircon_price, rate)}</td>
                     <td><span className={`badge badge-${r.status}`}>{r.status}</span></td>
                     {isAdmin && (
                       <td>
@@ -379,7 +381,7 @@ export default function Rooms() {
 
       {/* Room Modal */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (() => setShowModal(false))(); }}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3>{editRoom ? 'Edit Room' : 'Add Room'}</h3>
             <form onSubmit={saveRoom}>
@@ -413,9 +415,15 @@ export default function Rooms() {
                   </select>
                 </div>
               </div>
-              <div className="form-group">
-                <label>តម្លៃក្នុង១យប់ ($)</label>
-                <input type="number" step="0.01" value={form.price} onChange={e => setForm({...form, price: e.target.value})} required placeholder="ឧ. 17" />
+              <div className="form-row">
+                <div className="form-group">
+                  <label>🌀 តម្លៃ Fan ($)</label>
+                  <input type="number" step="0.01" value={form.fan_price} onChange={e => setForm({...form, fan_price: e.target.value})} required placeholder="ឧ. 12" />
+                </div>
+                <div className="form-group">
+                  <label>❄ តម្លៃ Aircon ($)</label>
+                  <input type="number" step="0.01" value={form.aircon_price} onChange={e => setForm({...form, aircon_price: e.target.value})} required placeholder="ឧ. 17" />
+                </div>
               </div>
               <div className="form-group">
                 <label>Notes</label>
@@ -432,7 +440,7 @@ export default function Rooms() {
 
       {/* Building Modal — Create & Edit */}
       {showBuildingModal && (
-        <div className="modal-overlay" onClick={() => setShowBuildingModal(false)}>
+        <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (() => setShowBuildingModal(false))(); }}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3>{editBuilding ? 'Edit Building' : 'Add Building'}</h3>
             <form onSubmit={saveBuilding}>
@@ -505,7 +513,7 @@ export default function Rooms() {
 
       {/* Room Type Modal */}
       {showTypeModal && (
-        <div className="modal-overlay" onClick={() => setShowTypeModal(false)}>
+        <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (() => setShowTypeModal(false))(); }}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 520 }}>
             <h3>{editType ? 'កែប្រែប្រភេទបន្ទប់' : 'គ្រប់គ្រងប្រភេទបន្ទប់'}</h3>
 

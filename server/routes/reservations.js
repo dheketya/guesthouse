@@ -16,7 +16,7 @@ router.get('/', auth, authorize('admin', 'receptionist'), async (req, res) => {
     const { status, date, search } = req.query;
     let sql = `
       SELECT r.*, g.first_name, g.last_name, g.phone as guest_phone,
-             rm.room_number, rm.price as room_price, b.name as building_name, rt.name as room_type_name
+             rm.room_number, rm.fan_price, rm.aircon_price, b.name as building_name, rt.name as room_type_name
       FROM reservations r
       JOIN guests g ON r.guest_id = g.id
       JOIN rooms rm ON r.room_id = rm.id

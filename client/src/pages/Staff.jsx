@@ -111,7 +111,7 @@ export default function Staff() {
 
       {/* Add Staff Modal */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (() => setShowModal(false))(); }}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 450 }}>
             <h3>Add Staff Member</h3>
             <form onSubmit={save}>
@@ -141,7 +141,7 @@ export default function Staff() {
 
       {/* Reset Password Modal */}
       {showResetModal && (
-        <div className="modal-overlay" onClick={() => setShowResetModal(null)}>
+        <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (() => setShowResetModal(null))(); }}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400 }}>
             <h3>Reset Password</h3>
             <div className="form-group"><label>New Password</label><input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} /></div>

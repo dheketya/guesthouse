@@ -72,7 +72,8 @@ const tables = [
     building_id INT NOT NULL,
     floor_id INT,
     room_type_id INT NOT NULL,
-    price DECIMAL(10,2) NOT NULL DEFAULT 0,
+    fan_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+    aircon_price DECIMAL(10,2) NOT NULL DEFAULT 0,
     status ENUM('available','occupied','cleaning','maintenance') DEFAULT 'available',
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -85,8 +86,8 @@ const tables = [
   // Guests
   `CREATE TABLE IF NOT EXISTS guests (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
+    first_name VARCHAR(100) DEFAULT '',
+    last_name VARCHAR(100) DEFAULT '',
     gender ENUM('male','female','other'),
     nationality VARCHAR(100),
     id_type ENUM('passport','national_id','driving_license','other'),

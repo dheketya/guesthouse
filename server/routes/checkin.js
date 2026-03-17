@@ -3,19 +3,24 @@ const db = require('../db/connection');
 const auth = require('../middleware/auth');
 const authorize = require('../middleware/roles');
 
-// Helper: get room price based on price type and custom price
+// Helper: get room price based on cooling type, price type, and custom price
 async function getRoomPrice(roomId, coolingType, priceType, customPrice) {
   const [roomInfo] = await db.query(`
-    SELECT r.price, r.room_number FROM rooms r WHERE r.id = ?
+    SELECT r.fan_price, r.aircon_price, r.room_number FROM rooms r WHERE r.id = ?
   `, [roomId]);
   const room = roomInfo[0];
 
-  // Custom/discount price overrides room price
-  if ((priceType === 'custom' || priceType === 'discount') && customPrice) {
+  // Discount price overrides
+  if (priceType === 'discount' && customPrice) {
     return { price: parseFloat(customPrice), room_number: room.room_number };
   }
 
-  return { price: parseFloat(room.price) || 0, room_number: room.room_number };
+  // Pick price based on cooling type
+  const price = coolingType === 'aircon'
+    ? (parseFloat(room.aircon_price) || 0)
+    : (parseFloat(room.fan_price) || 0);
+
+  return { price, room_number: room.room_number };
 }
 
 // Check in
@@ -272,14 +277,14 @@ router.post('/room-change', auth, authorize('admin', 'receptionist'), async (req
 
     // Get old room info
     const [oldRoomInfo] = await db.query(`
-      SELECT r.room_number, r.price,
+      SELECT r.room_number, r.fan_price, r.aircon_price,
              rt.name as room_type_name, b.name as building_name
       FROM rooms r JOIN room_types rt ON r.room_type_id = rt.id JOIN buildings b ON r.building_id = b.id WHERE r.id = ?
     `, [oldRoomId]);
 
     // Get new room info
     const [newRoomInfo] = await db.query(`
-      SELECT r.room_number, r.price,
+      SELECT r.room_number, r.fan_price, r.aircon_price,
              rt.name as room_type_name, b.name as building_name
       FROM rooms r JOIN room_types rt ON r.room_type_id = rt.id JOIN buildings b ON r.building_id = b.id WHERE r.id = ?
     `, [new_room_id]);

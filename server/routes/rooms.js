@@ -78,10 +78,10 @@ router.get('/available', auth, async (req, res) => {
 // Create room
 router.post('/', auth, authorize('admin'), async (req, res) => {
   try {
-    const { room_number, building_id, floor_id, room_type_id, price, notes } = req.body;
+    const { room_number, building_id, floor_id, room_type_id, fan_price, aircon_price, notes } = req.body;
     const [result] = await db.query(
-      'INSERT INTO rooms (room_number, building_id, floor_id, room_type_id, price, notes) VALUES (?,?,?,?,?,?)',
-      [room_number, building_id, floor_id || null, room_type_id, price || 0, notes]
+      'INSERT INTO rooms (room_number, building_id, floor_id, room_type_id, fan_price, aircon_price, notes) VALUES (?,?,?,?,?,?,?)',
+      [room_number, building_id, floor_id || null, room_type_id, fan_price || 0, aircon_price || 0, notes]
     );
     res.status(201).json({ id: result.insertId, room_number });
   } catch (err) {
@@ -92,10 +92,10 @@ router.post('/', auth, authorize('admin'), async (req, res) => {
 // Update room
 router.put('/:id', auth, authorize('admin'), async (req, res) => {
   try {
-    const { room_number, building_id, floor_id, room_type_id, price, status, notes } = req.body;
+    const { room_number, building_id, floor_id, room_type_id, fan_price, aircon_price, status, notes } = req.body;
     await db.query(
-      'UPDATE rooms SET room_number=?, building_id=?, floor_id=?, room_type_id=?, price=?, status=?, notes=? WHERE id=?',
-      [room_number, building_id, floor_id || null, room_type_id, price || 0, status, notes, req.params.id]
+      'UPDATE rooms SET room_number=?, building_id=?, floor_id=?, room_type_id=?, fan_price=?, aircon_price=?, status=?, notes=? WHERE id=?',
+      [room_number, building_id, floor_id || null, room_type_id, fan_price || 0, aircon_price || 0, status, notes, req.params.id]
     );
     res.json({ message: 'Room updated.' });
   } catch (err) {

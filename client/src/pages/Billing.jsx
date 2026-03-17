@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../api';
 import toast from 'react-hot-toast';
 import { formatPrice } from '../utils/currency';
+import { printContent } from '../utils/print';
 
 export default function Billing() {
   const [invoices, setInvoices] = useState([]);
@@ -74,13 +75,49 @@ export default function Billing() {
 
   if (selected) {
     const balance = selected.total - selected.paid_amount;
+    const printInvoice = () => {
+      const ghName = settings.guesthouse_name || 'HappyStay';
+      printContent(`Invoice ${selected.invoice_number}`, `
+        <div class="header"><h1>${ghName}</h1><p>វិក្កយបត្រ / Invoice</p></div>
+        <div class="info-grid">
+          <div>វិក្កយបត្រ: <strong>${selected.invoice_number}</strong></div>
+          <div>ភ្ញៀវ: <strong>${selected.first_name} ${selected.last_name}</strong></div>
+          <div>Ref: <strong>${selected.booking_ref || '-'}</strong></div>
+          <div>បន្ទប់: <strong>${selected.room_number || '-'} (${selected.building_name || ''})</strong></div>
+          <div>ចូល: <strong>${selected.check_in_date || '-'}</strong></div>
+          <div>ចេញ: <strong>${selected.check_out_date || '-'}</strong></div>
+        </div>
+        <table><thead><tr><th>បរិយាយ</th><th style="text-align:center">ចំនួន</th><th style="text-align:right">តម្លៃ</th><th style="text-align:right">សរុប</th></tr></thead><tbody>
+        ${(selected.items || []).map(i => `<tr><td>${i.description}</td><td style="text-align:center">${i.quantity}</td><td style="text-align:right">${fp(i.unit_price)}</td><td style="text-align:right">${fp(i.total_price)}</td></tr>`).join('')}
+        </tbody></table>
+        <div class="total-section">
+          <p>សរុបរង: <strong>${fp(selected.subtotal)}</strong></p>
+          ${selected.discount_amount > 0 ? `<p>បញ្ចុះតម្លៃ: -${fp(selected.discount_amount)}</p>` : ''}
+          <p class="grand-total">សរុប: ${fp(selected.total)}</p>
+          <p>បានបង់: ${fp(selected.paid_amount)}</p>
+          ${balance > 0 ? `<p style="color:#c62828">នៅជំពាក់: ${fp(balance)}</p>` : ''}
+        </div>
+        ${(selected.payments || []).length > 0 ? `
+          <h2>ការទូទាត់</h2>
+          <table><thead><tr><th>ថ្ងៃ</th><th>វិធី</th><th style="text-align:right">ចំនួន</th></tr></thead><tbody>
+          ${selected.payments.map(p => `<tr><td>${p.payment_date}</td><td>${p.payment_method}</td><td style="text-align:right">${fp(p.amount)}</td></tr>`).join('')}
+          </tbody></table>
+        ` : ''}
+        <div class="sig-area"><div class="sig-line"><div>ហត្ថលេខាភ្ញៀវ</div></div><div class="sig-line"><div>អ្នកទទួលភ្ញៀវ</div></div></div>
+        <div class="footer">${settings.invoice_footer || 'អរគុណ!'}</div>
+      `);
+    };
+
     return (
       <div>
-        <button className="btn btn-outline mb-2" onClick={() => setSelected(null)}>&larr; Back to Invoices</button>
+        <div className="flex gap-2 mb-2">
+          <button className="btn btn-outline" onClick={() => setSelected(null)}>&larr; ត្រឡប់</button>
+          <button className="btn btn-primary" onClick={printInvoice}>បោះពុម្ព វិក្កយបត្រ</button>
+        </div>
 
         <div className="card">
           <div className="card-header">
-            <h3>Invoice {selected.invoice_number}</h3>
+            <h3>វិក្កយបត្រ {selected.invoice_number}</h3>
             <span className={`badge badge-${selected.status}`}>{selected.status}</span>
           </div>
 
@@ -152,7 +189,7 @@ export default function Billing() {
 
         {/* Payment Modal */}
         {showPayment && (
-          <div className="modal-overlay" onClick={() => setShowPayment(false)}>
+          <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (() => setShowPayment(false))(); }}>
             <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 450 }}>
               <h3>Record Payment</h3>
               <form onSubmit={addPayment}>
@@ -177,7 +214,7 @@ export default function Billing() {
 
         {/* Add Item Modal */}
         {showAddItem && (
-          <div className="modal-overlay" onClick={() => setShowAddItem(false)}>
+          <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (() => setShowAddItem(false))(); }}>
             <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 450 }}>
               <h3>Add Charge</h3>
               <form onSubmit={addItem}>
@@ -205,7 +242,7 @@ export default function Billing() {
 
         {/* Discount Modal */}
         {showDiscount && (
-          <div className="modal-overlay" onClick={() => setShowDiscount(false)}>
+          <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (() => setShowDiscount(false))(); }}>
             <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400 }}>
               <h3>Apply Discount</h3>
               <form onSubmit={applyDiscount}>

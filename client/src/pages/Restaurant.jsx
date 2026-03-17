@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import ConfirmModal from '../components/ConfirmModal';
 import GuestSearch from '../components/GuestSearch';
 import { formatPrice } from '../utils/currency';
+import { printContent } from '../utils/print';
 
 export default function Restaurant() {
   const { hasRole } = useAuth();
@@ -177,21 +178,40 @@ export default function Restaurant() {
 
           {orderDetail ? (
             <div className="card">
-              <button className="btn btn-outline btn-sm mb-2" onClick={() => setOrderDetail(null)}>&larr; Back</button>
+              <div className="flex gap-2 mb-2">
+                <button className="btn btn-outline btn-sm" onClick={() => setOrderDetail(null)}>&larr; ត្រឡប់</button>
+                <button className="btn btn-primary btn-sm" onClick={() => {
+                  const ghName = settings.guesthouse_name || 'HappyStay';
+                  printContent(`Order #${orderDetail.id}`, `
+                    <div class="header"><h1>${ghName}</h1><p>បង្កាន់ដៃបញ្ជាទិញ / Order Receipt</p></div>
+                    <div class="info-grid">
+                      <div>លេខ: <strong>#${orderDetail.id}</strong></div>
+                      <div>ប្រភេទ: <strong>${orderDetail.order_type}</strong></div>
+                      <div>បន្ទប់: <strong>${orderDetail.room_number || '-'}</strong></div>
+                      <div>អតិថិជន: <strong>${orderDetail.customer_name || '-'}</strong></div>
+                    </div>
+                    <table><thead><tr><th>មុខម្ហូប</th><th style="text-align:center">ចំនួន</th><th style="text-align:right">តម្លៃ</th><th style="text-align:right">សរុប</th></tr></thead><tbody>
+                    ${(orderDetail.items || []).map(i => `<tr><td>${i.item_name}</td><td style="text-align:center">${i.quantity}</td><td style="text-align:right">${fp(i.unit_price)}</td><td style="text-align:right">${fp(i.total_price)}</td></tr>`).join('')}
+                    </tbody></table>
+                    <div class="total-section"><p class="grand-total">សរុប: ${fp(orderDetail.total)}</p></div>
+                    <div class="footer">${settings.invoice_footer || 'អរគុណ!'}</div>
+                  `);
+                }}>បោះពុម្ព</button>
+              </div>
               <div className="card-header">
-                <h3>Order #{orderDetail.id}</h3>
+                <h3>បញ្ជាទិញ #{orderDetail.id}</h3>
                 <span className={`badge badge-${orderDetail.status}`}>{orderDetail.status}</span>
               </div>
-              <p><strong>Type:</strong> {orderDetail.order_type} | <strong>Room:</strong> {orderDetail.room_number || 'N/A'} | <strong>Customer:</strong> {orderDetail.customer_name || '-'}</p>
+              <p><strong>ប្រភេទ:</strong> {orderDetail.order_type} | <strong>បន្ទប់:</strong> {orderDetail.room_number || '-'} | <strong>អតិថិជន:</strong> {orderDetail.customer_name || '-'}</p>
               <table className="mt-1">
-                <thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+                <thead><tr><th>មុខម្ហូប</th><th>ចំនួន</th><th>តម្លៃ</th><th>សរុប</th></tr></thead>
                 <tbody>
                   {orderDetail.items?.map(i => (
                     <tr key={i.id}><td>{i.item_name}</td><td>{i.quantity}</td><td>{fp(i.unit_price)}</td><td>{fp(i.total_price)}</td></tr>
                   ))}
                 </tbody>
               </table>
-              <p className="text-right mt-1" style={{ fontSize: 18 }}><strong>Total: {fp(orderDetail.total)}</strong></p>
+              <p className="text-right mt-1" style={{ fontSize: 18 }}><strong>សរុប: {fp(orderDetail.total)}</strong></p>
               {canManage && orderDetail.status === 'pending' && (
                 <div className="flex gap-2 mt-1">
                   <button className="btn btn-success" onClick={() => updateOrderStatus(orderDetail.id, 'served')}>Mark Served</button>
@@ -234,7 +254,7 @@ export default function Restaurant() {
 
       {/* Menu Modal */}
       {showMenuModal && (
-        <div className="modal-overlay" onClick={() => setShowMenuModal(false)}>
+        <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (() => setShowMenuModal(false))(); }}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 450 }}>
             <h3>{editItem ? 'Edit Menu Item' : 'Add Menu Item'}</h3>
             <form onSubmit={saveMenu}>
@@ -260,7 +280,7 @@ export default function Restaurant() {
 
       {/* New Order Modal */}
       {showOrderModal && (
-        <div className="modal-overlay" onClick={() => setShowOrderModal(false)}>
+        <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) (() => setShowOrderModal(false))(); }}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 700 }}>
             <h3>New Order</h3>
             <form onSubmit={submitOrder}>
