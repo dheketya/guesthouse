@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import toast from 'react-hot-toast';
-import GuestSearch from '../components/GuestSearch';
 import { formatPrice } from '../utils/currency';
 
 const DAYS_TO_SHOW = 14;
@@ -54,7 +53,9 @@ export default function FrontDesk() {
   });
   const [selectedRes, setSelectedRes] = useState(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
-  const [bookingForm, setBookingForm] = useState({ guest_id: '', guest_name: '', room_id: '', check_in_date: '', check_out_date: '', cooling_type: 'aircon', price_type: 'regular', custom_price: '', num_guests: 1 });
+  const [bookingForm, setBookingForm] = useState({ guest_id: '', guest_name: '', guest_phone: '', room_id: '', check_in_date: '', check_out_date: '', cooling_type: 'aircon', price_type: 'regular', custom_price: '', num_guests: 1 });
+  const [phoneSearchResults, setPhoneSearchResults] = useState([]);
+  const [phoneSearchDone, setPhoneSearchDone] = useState(false);
   const [filterType, setFilterType] = useState('');
 
   const dates = useMemo(() => getDateRange(startDate, DAYS_TO_SHOW), [startDate]);
@@ -174,7 +175,8 @@ export default function FrontDesk() {
 
   // Quick book
   const openQuickBook = (room, dateStr) => {
-    setBookingForm({ guest_name: '', room_id: String(room.id), check_in_date: dateStr, check_out_date: '', cooling_type: 'aircon', price_type: 'regular', custom_price: '', num_guests: 1 });
+    setBookingForm({ guest_id: '', guest_name: '', guest_phone: '', room_id: String(room.id), check_in_date: dateStr, check_out_date: '', cooling_type: 'aircon', price_type: 'regular', custom_price: '', num_guests: 1 });
+    setPhoneSearchResults([]); setPhoneSearchDone(false);
     setShowBookingModal(true);
   };
 
@@ -257,7 +259,7 @@ export default function FrontDesk() {
             {Object.keys(roomTypes).map(t => <option key={t} value={t}>{t}</option>)}
           </select>
           <button className="btn btn-outline" onClick={() => navigate('/reservations')}>បញ្ជីការកក់</button>
-          <button className="btn btn-primary" onClick={() => { setBookingForm({ guest_id: '', guest_name: '', room_id: '', check_in_date: startDate, check_out_date: '', cooling_type: 'aircon', price_type: 'regular', custom_price: '', num_guests: 1 }); setShowBookingModal(true); }}>
+          <button className="btn btn-primary" onClick={() => { setBookingForm({ guest_id: '', guest_name: '', guest_phone: '', room_id: '', check_in_date: startDate, check_out_date: '', cooling_type: 'aircon', price_type: 'regular', custom_price: '', num_guests: 1 }); setPhoneSearchResults([]); setPhoneSearchDone(false); setShowBookingModal(true); }}>
             + កក់បន្ទប់ថ្មី
           </button>
         </div>
@@ -433,16 +435,62 @@ export default function FrontDesk() {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3>កក់បន្ទប់ថ្មី</h3>
             <form onSubmit={saveBooking}>
+              {/* Phone-first guest lookup */}
               <div className="form-group">
-                <label>ឈ្មោះភ្ញៀវ</label>
-                <GuestSearch
-                  value={bookingForm.guest_name}
-                  onChange={(name) => setBookingForm({...bookingForm, guest_name: name, guest_id: ''})}
-                  onSelectGuest={(guest) => setBookingForm({...bookingForm, guest_id: guest.id, guest_name: `${guest.first_name} ${guest.last_name}`})}
-                  placeholder="វាយឈ្មោះដើម្បីស្វែងរក..."
-                />
-                {bookingForm.guest_id && <small style={{ color: '#4caf50' }}>ភ្ញៀវដែលមានស្រាប់ #{bookingForm.guest_id}</small>}
+                <label>លេខទូរសព្ទ <span style={{ color: '#c62828' }}>*</span></label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    value={bookingForm.guest_phone}
+                    onChange={e => { setBookingForm({...bookingForm, guest_phone: e.target.value, guest_id: ''}); setPhoneSearchDone(false); setPhoneSearchResults([]); }}
+                    placeholder="ឧ. 012 345 678"
+                    required
+                    style={{ flex: 1 }}
+                  />
+                  <button type="button" className="btn btn-outline" onClick={async () => {
+                    if (!bookingForm.guest_phone.trim()) return;
+                    try {
+                      const res = await api.get('/guests', { params: { search: bookingForm.guest_phone.trim() } });
+                      const matches = res.data.filter(g => g.phone && g.phone.replace(/\s/g, '').includes(bookingForm.guest_phone.trim().replace(/\s/g, '')));
+                      setPhoneSearchResults(matches);
+                      setPhoneSearchDone(true);
+                      if (matches.length === 1) {
+                        const g = matches[0];
+                        setBookingForm(f => ({...f, guest_id: g.id, guest_name: `${g.first_name} ${g.last_name}`.trim()}));
+                      }
+                    } catch { setPhoneSearchResults([]); setPhoneSearchDone(true); }
+                  }}>ស្វែងរក</button>
+                </div>
               </div>
+
+              {/* Phone search results */}
+              {phoneSearchDone && phoneSearchResults.length > 1 && (
+                <div className="form-group">
+                  <label>រកឃើញភ្ញៀវ ({phoneSearchResults.length})</label>
+                  <div style={{ border: '1px solid #ddd', borderRadius: 8, maxHeight: 150, overflowY: 'auto' }}>
+                    {phoneSearchResults.map(g => (
+                      <div key={g.id} onClick={() => { setBookingForm(f => ({...f, guest_id: g.id, guest_name: `${g.first_name} ${g.last_name}`.trim()})); setPhoneSearchResults([g]); }}
+                        style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid #f0f0f0', background: bookingForm.guest_id === g.id ? '#e8f5e9' : '#fff' }}>
+                        <strong>{g.first_name} {g.last_name}</strong> <span style={{ color: '#888', fontSize: 12 }}>({g.phone})</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Selected guest or new guest name */}
+              {phoneSearchDone && bookingForm.guest_id && (
+                <div style={{ background: '#e8f5e9', padding: '8px 14px', borderRadius: 8, marginBottom: 12, fontSize: 14 }}>
+                  ✓ ភ្ញៀវដែលមានស្រាប់: <strong>{bookingForm.guest_name}</strong>
+                </div>
+              )}
+
+              {phoneSearchDone && !bookingForm.guest_id && (
+                <div className="form-group">
+                  <label>ឈ្មោះភ្ញៀវ (ថ្មី)</label>
+                  <input value={bookingForm.guest_name} onChange={e => setBookingForm({...bookingForm, guest_name: e.target.value})} placeholder="នាមត្រកូល នាមខ្លួន" />
+                  <small style={{ color: '#888' }}>នឹងបង្កើតភ្ញៀវថ្មីជាមួយលេខទូរសព្ទនេះ</small>
+                </div>
+              )}
               <div className="form-row">
                 <div className="form-group">
                   <label>ថ្ងៃចូល</label>

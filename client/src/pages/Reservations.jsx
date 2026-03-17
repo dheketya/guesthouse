@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../components/ConfirmModal';
-import GuestSearch from '../components/GuestSearch';
 import { formatPrice, formatPriceShort } from '../utils/currency';
 
 export default function Reservations() {
@@ -253,19 +252,72 @@ export default function Reservations() {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3>{editRes ? `Edit Reservation — ${editRes.booking_ref}` : 'New Reservation'}</h3>
             <form onSubmit={save}>
+              {/* Phone-first guest lookup */}
               <div className="form-group">
-                <label>ឈ្មោះភ្ញៀវ</label>
-                <GuestSearch
-                  value={form.guest_name}
-                  onChange={(name) => setForm({...form, guest_name: name, guest_id: ''})}
-                  onSelectGuest={(guest) => setForm({...form, guest_id: guest.id, guest_name: `${guest.first_name} ${guest.last_name}`})}
-                  disabled={!!editRes}
-                  placeholder="វាយឈ្មោះដើម្បីស្វែងរក ឬ បង្កើតថ្មី..."
-                />
-                {form.guest_id && !editRes && <small style={{ color: '#4caf50' }}>ភ្ញៀវដែលមានស្រាប់: ID #{form.guest_id}</small>}
-                {!form.guest_id && form.guest_name && !editRes && <small style={{ color: '#888' }}>នឹងបង្កើតភ្ញៀវថ្មី</small>}
-                {editRes && <small style={{ color: '#999' }}>មិនអាចផ្លាស់ប្តូរឈ្មោះនៅទីនេះ។</small>}
+                <label>លេខទូរសព្ទ <span style={{ color: '#c62828' }}>*</span></label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    value={form.guest_phone}
+                    onChange={e => { setForm({...form, guest_phone: e.target.value, guest_id: ''}); setPhoneSearchDone(false); setPhoneSearchResults([]); }}
+                    placeholder="ឧ. 012 345 678"
+                    disabled={!!editRes}
+                    required
+                    style={{ flex: 1 }}
+                  />
+                  {!editRes && (
+                    <button type="button" className="btn btn-outline" onClick={async () => {
+                      if (!form.guest_phone.trim()) return;
+                      try {
+                        const res = await api.get('/guests', { params: { search: form.guest_phone.trim() } });
+                        const matches = res.data.filter(g => g.phone && g.phone.replace(/\s/g, '').includes(form.guest_phone.trim().replace(/\s/g, '')));
+                        setPhoneSearchResults(matches);
+                        setPhoneSearchDone(true);
+                        if (matches.length === 1) {
+                          const g = matches[0];
+                          setForm(f => ({...f, guest_id: g.id, guest_name: `${g.first_name} ${g.last_name}`.trim()}));
+                        }
+                      } catch { setPhoneSearchResults([]); setPhoneSearchDone(true); }
+                    }}>ស្វែងរក</button>
+                  )}
+                </div>
+                {editRes && <small style={{ color: '#999' }}>មិនអាចផ្លាស់ប្តូរភ្ញៀវ។</small>}
               </div>
+
+              {/* Phone search results */}
+              {!editRes && phoneSearchDone && phoneSearchResults.length > 1 && (
+                <div className="form-group">
+                  <label>រកឃើញភ្ញៀវ ({phoneSearchResults.length})</label>
+                  <div style={{ border: '1px solid #ddd', borderRadius: 8, maxHeight: 150, overflowY: 'auto' }}>
+                    {phoneSearchResults.map(g => (
+                      <div key={g.id} onClick={() => { setForm(f => ({...f, guest_id: g.id, guest_name: `${g.first_name} ${g.last_name}`.trim()})); setPhoneSearchResults([g]); }}
+                        style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid #f0f0f0', background: form.guest_id === g.id ? '#e8f5e9' : '#fff' }}>
+                        <strong>{g.first_name} {g.last_name}</strong> <span style={{ color: '#888', fontSize: 12 }}>({g.phone})</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Selected guest or new guest name */}
+              {!editRes && phoneSearchDone && form.guest_id && (
+                <div style={{ background: '#e8f5e9', padding: '8px 14px', borderRadius: 8, marginBottom: 12, fontSize: 14 }}>
+                  ✓ ភ្ញៀវដែលមានស្រាប់: <strong>{form.guest_name}</strong> <span style={{ color: '#888' }}>(ID #{form.guest_id})</span>
+                </div>
+              )}
+
+              {!editRes && phoneSearchDone && !form.guest_id && (
+                <div className="form-group">
+                  <label>ឈ្មោះភ្ញៀវ (ថ្មី)</label>
+                  <input value={form.guest_name} onChange={e => setForm({...form, guest_name: e.target.value})} placeholder="នាមត្រកូល នាមខ្លួន" />
+                  <small style={{ color: '#888' }}>នឹងបង្កើតភ្ញៀវថ្មីជាមួយលេខទូរសព្ទនេះ</small>
+                </div>
+              )}
+
+              {editRes && (
+                <div style={{ background: '#f5f5f5', padding: '8px 14px', borderRadius: 8, marginBottom: 12, fontSize: 14 }}>
+                  ភ្ញៀវ: <strong>{form.guest_name}</strong>
+                </div>
+              )}
               <div className="form-row">
                 <div className="form-group">
                   <label>Check-in Date</label>

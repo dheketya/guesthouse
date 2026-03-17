@@ -75,12 +75,30 @@ router.post('/', auth, authorize('admin', 'receptionist'), async (req, res) => {
   try {
     let { guest_id, guest_name, room_id, check_in_date, check_out_date, num_guests, cooling_type, price_type, custom_price, booking_source, status, special_requests, notes } = req.body;
 
-    // Auto-create guest from name if no guest_id provided
-    if (!guest_id && guest_name) {
+    // Phone-first guest lookup/creation
+    const { guest_phone } = req.body;
+
+    if (!guest_id && guest_phone) {
+      // Search existing guest by phone
+      const [existing] = await db.query('SELECT id FROM guests WHERE phone = ? LIMIT 1', [guest_phone.trim()]);
+      if (existing.length > 0) {
+        guest_id = existing[0].id;
+      } else {
+        // Create new guest with phone + optional name
+        const nameParts = (guest_name || '').trim().split(/\s+/).filter(Boolean);
+        const first_name = nameParts[0] || '';
+        const last_name = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+        const [guestResult] = await db.query(
+          'INSERT INTO guests (first_name, last_name, phone) VALUES (?, ?, ?)',
+          [first_name, last_name, guest_phone.trim()]
+        );
+        guest_id = guestResult.insertId;
+      }
+    } else if (!guest_id && guest_name) {
+      // Fallback: create guest from name only
       const nameParts = guest_name.trim().split(/\s+/);
       const first_name = nameParts[0];
-      const last_name = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'Guest';
-
+      const last_name = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
       const [guestResult] = await db.query(
         'INSERT INTO guests (first_name, last_name) VALUES (?, ?)',
         [first_name, last_name]
@@ -89,7 +107,7 @@ router.post('/', auth, authorize('admin', 'receptionist'), async (req, res) => {
     }
 
     if (!guest_id) {
-      return res.status(400).json({ error: 'Guest name is required.' });
+      return res.status(400).json({ error: 'ត្រូវការលេខទូរសព្ទ។' });
     }
 
     const booking_ref = generateBookingRef();
