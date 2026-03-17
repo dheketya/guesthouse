@@ -1,0 +1,28 @@
+{
+  "name": "happystay-guesthouse",
+  "version": "1.0.0",
+  "description": "Guesthouse Management System — local-first, web-based property management",
+  "scripts": {
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "server:dev": "cd server && npx nodemon index.js",
+    "client:dev": "cd client && npx vite --host",
+    "start": "node server/index.js",
+    "build": "cd client && npm run build",
+    "migrate": "node server/db/migrate.js",
+    "seed": "node server/db/seed.js",
+    "install:all": "npm install && cd client && npm install"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "concurrently": "^8.2.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.11.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
